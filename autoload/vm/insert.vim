@@ -30,7 +30,7 @@ let s:X = { -> g:Vm.extend_mode }
 
 fun! s:Insert.key(type) abort
     call vm#comp#icmds()  "compatibility tweaks
-    if !exists('s:V.Insert.type')
+    if s:v.single_region && !exists('s:V.Insert.type')
         let s:V.Insert.type = a:type
     endif
     call s:map_single_mode(0)
@@ -523,6 +523,7 @@ fun! s:map_single_mode(stop) abort
   """If single_region is active, map Tab to cycle regions.
   if !s:v.single_region || !get(g:, 'VM_single_mode_maps', 1) | return | endif
 
+  echom s:V.Insert.type
   let next = get(g:VM_maps, 'I Next', '<Tab>')
   let prev = get(g:VM_maps, 'I Prev', '<S-Tab>')
 
