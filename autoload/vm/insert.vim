@@ -189,6 +189,8 @@ fun! s:Insert.insert(...) abort
     let I = self
     let L = I.lines
 
+    let replace_mode = mode()[0] ==# 'R'
+
     " this is the current cursor position
     let ln   = line('.')
     let coln = col('.')
@@ -227,7 +229,7 @@ fun! s:Insert.insert(...) abort
 
     let lastchar = strcharpart(@., strchars(@.)-1)
     let extra = a:0 ? strlen(lastchar) : 0
-    let text = getline(ln)[(pos-1):(coln-2+extra)]
+    let inserted_text = getline(ln)[(pos-1):(coln-2+extra)]
 
     " now update the current change: secondary cursors need this value updated
     let I.change = coln - pos + a:0
@@ -235,7 +237,7 @@ fun! s:Insert.insert(...) abort
     " update the lines (also the current line is updated with setline(), this
     " should ensure that the same text is entered everywhere)
     for l in sort(keys(L))
-        call L[l].update(I.change, text)
+        call L[l].update(I.change, inserted_text, replace_mode)
     endfor
 
     " put the cursor where it should stay after the lines update
@@ -396,7 +398,7 @@ endfun
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-fun! s:Line.update(change, text) abort
+fun! s:Line.update(change, text, replace_mode) abort
     let change   = 0
     let text     = self.txt
     let I        = s:V.Insert
@@ -433,7 +435,16 @@ fun! s:Line.update(change, text) abort
             continue
         endif
 
-        if c.a > 1
+        if a:replace_mode
+            if c.a > 1
+                let insPoint = c.a + change - 1
+                let t1 = text[ 0 : (insPoint - 1) ]
+                let t2 = text[ insPoint + len(inserted) : ]
+                let text = t1 . inserted . t2
+            else
+                let text = inserted . text[ len(inserted) : ]
+            endif
+        elseif c.a > 1
             let insPoint = c.a + change - 1
             let t1 = text[ 0 : (insPoint - 1) ]
             let t2 = text[ insPoint : ]
